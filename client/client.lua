@@ -9,15 +9,6 @@ exports.qtarget:AddTargetModel({Config.shopCartModels[1]}, {
 	},
 	distance = 2
 })
-RegisterCommand("unfreezex", function(source,args,rawCommand)
-	print('ok?')
-	SetPedAmmo(
-	PlayerPedId(), 
-	GetHashKey("WEAPON_PISTOL"), 100)
-	FreezeEntityPosition(PlayerPedId(), false)
-	print(IsEntityPositionFrozen(PlayerPedId()))
-	ClearPedTasks(PlayerPedId())
-end,false)
 
 --DecorSetBool(clerk, "isRobbable", false)
 RegisterNetEvent('Infram:ShopRobbery')
@@ -31,7 +22,7 @@ AddEventHandler('Infram:ShopRobbery', function()
 		print('W tym miejscu należy dać informację dla policji oraz utratę wytrychu???')
 	end
 end)
-
+local inRob = false
 letsrob = function()
 	local pedEntity = PlayerPedId()
 	local closestTill = GetClosestObjectOfType(GetEntityCoords(pedEntity), 4.0, Config.shopCartModels[1], false) -- wybrany jeden typ kasetki (nieotwarta i nieuszkodzona)
@@ -46,14 +37,13 @@ letsrob = function()
 	RequestNetworkControl({
 		pedEntity,
 	})
-	print(GetEntityCoords(closestTill))
+
 	local vectorF = GetEntityForwardVector(closestTill)
 	local scene = NetworkCreateSynchronisedScene(GetEntityCoords(closestTill) - vectorF + 0.3 - vector3(0.0,0.0,0.4), GetEntityRotation(closestTill), 2, false, false, 1065353216, 0, 1.3)
-		
 	NetworkAddPedToSynchronisedScene(pedEntity, scene, "oddjobs@shop_robbery@rob_till", "enter", 16.0, -4.0, 10, 16, 1148846080, 0) -- ta scena nastawia gracza na odpowiednio na kastetke
 	NetworkStartSynchronisedScene(scene)
 	Wait(1000)
-
+	Winner()
 	exports.rprogress:Custom({
 		Async = true,
 		canCancel = true,       
@@ -85,10 +75,9 @@ letsrob = function()
 		},    
 		onComplete = function(cancelled)
 			if cancelled then 
-				print('przegryw') 
-			else 
-				GlobalFunction("win", { ["cash"] = math.random(Config.RandomCash[1], Config.RandomCash[2])})
-				print('wygryw') 
+				inRob = false 
+			else  
+				inRob = false
 			end
 		end
 	})
@@ -99,19 +88,16 @@ letsrob = function()
 end
 
 
-RegisterNetEvent("Infram:eventHandler")
-AddEventHandler("Infram:eventHandler", function(event, eventData)
-	if event == "win" then
-		Winner()
-	else
-		-- print("Wrong event handler.")
-	end
-end)
-
 
 -- funkcje
 Winner = function()
-	TriggerServerEvent("Infram:Win")
+	inRob = true
+	Citizen.CreateThread(function()
+		while inRob do
+			TriggerServerEvent("Infram:Win")
+			Wait(2000)
+		end
+	end)
 end
 
 GlobalFunction = function(event, data)
