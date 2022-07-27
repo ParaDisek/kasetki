@@ -95,7 +95,7 @@ Winner = function()
 	Citizen.CreateThread(function()
 		while inRob do
 			TriggerServerEvent("Infram:Win")
-			Wait(2000)
+			Citizen.Wait(2000)
 		end
 	end)
 end
